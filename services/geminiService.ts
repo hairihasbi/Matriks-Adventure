@@ -1,7 +1,23 @@
 import { GoogleGenAI } from "@google/genai";
 
+const getApiKey = () => {
+  const keys = [
+    import.meta.env.VITE_GEMINI_API_KEY,
+    import.meta.env.VITE_GEMINI_API_KEY_1,
+    import.meta.env.VITE_GEMINI_API_KEY_2,
+    import.meta.env.VITE_GEMINI_API_KEY_3
+  ].filter(key => !!key);
+
+  if (keys.length === 0) {
+    return (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : '') || '';
+  }
+
+  // Pilih secara acak untuk mendistribusikan beban (rotasi)
+  return keys[Math.floor(Math.random() * keys.length)];
+};
+
 const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || '' 
+  apiKey: getApiKey() 
 });
 
 export async function explainMatrixConcept(concept: string) {
