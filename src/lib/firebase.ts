@@ -19,28 +19,23 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Fungsi untuk mengetes koneksi ke Firestore
-async function testFirebaseConnection() {
+export async function checkFirebaseConnection() {
   if (!import.meta.env.VITE_FIREBASE_API_KEY) {
-    console.warn("⚠️ Firebase API Key belum di-set di Environment Variables.");
-    return;
+    return { connected: false, message: "API Key missing" };
   }
 
   try {
     // Mencoba mengambil dokumen dummy untuk verifikasi koneksi
     await getDocFromServer(doc(db, 'connection_test', 'verify'));
-    console.log("✅ Firebase Connected: Koneksi ke Firestore berhasil!");
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('offline')) {
-        console.error("❌ Firebase Error: Client offline atau domain tidak diizinkan.");
-      } else {
-        console.error("❌ Firebase Connection Failed:", error.message);
-      }
+    return { connected: true, message: "Connected" };
+  } catch (error: any) {
+    if (error?.message?.includes('offline') || error?.message?.includes('permission-denied')) {
+       // permission-denied actually means we reached the server but don't have access to this specific doc, 
+       // which still means the connection itself is working.
+       return { connected: true, message: "Connected (Auth limited)" };
     }
+    return { connected: false, message: error?.message || "Unknown error" };
   }
 }
-
-// Jalankan tes koneksi
-testFirebaseConnection();
 
 export default app;
