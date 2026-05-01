@@ -44,7 +44,7 @@ import SenseiMatriks from './components/SenseiMatriks.tsx';
 import Certificate from './components/Certificate.tsx';
 import LearningObjectives from './components/LearningObjectives.tsx';
 import { TeacherProfile } from './components/TeacherProfile.tsx';
-import { checkFirebaseConnection } from './src/lib/firebase.ts';
+import { checkFirebaseConnection, checkStorageConnection } from './src/lib/firebase.ts';
 import confetti from 'canvas-confetti';
 
 interface CertificateProps {
@@ -172,11 +172,15 @@ export default function App() {
   const [showObjectives, setShowObjectives] = useState(false);
   const [showTeacherProfile, setShowTeacherProfile] = useState(false);
   const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+  const [storageConnected, setStorageConnected] = useState<boolean | null>(null);
 
   // Check Firebase connection
   useEffect(() => {
     checkFirebaseConnection().then(res => {
       setDbConnected(res.connected);
+    });
+    checkStorageConnection().then(res => {
+      setStorageConnected(res.connected);
     });
   }, []);
 
@@ -547,6 +551,16 @@ export default function App() {
               }`}>
                 <Database className={dbConnected ? "w-3 h-3 animate-pulse" : "w-3 h-3"} />
                 {dbConnected ? 'DATABASE READY' : 'DATABASE OFFLINE'}
+              </div>
+            )}
+            {storageConnected !== null && (
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border transition-all ${
+                storageConnected 
+                  ? 'bg-sky-400/20 text-sky-300 border-sky-400/30' 
+                  : 'bg-rose-400/20 text-rose-300 border-rose-400/30'
+              }`}>
+                <Layers className={storageConnected ? "w-3 h-3 animate-pulse" : "w-3 h-3"} />
+                {storageConnected ? 'STORAGE ACTIVE' : 'STORAGE OFFLINE'}
               </div>
             )}
             <div className="px-3 py-1 bg-white/10 text-white/60 border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
