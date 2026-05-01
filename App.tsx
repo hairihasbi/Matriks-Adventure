@@ -28,7 +28,8 @@ import {
   RefreshCw,
   Layers,
   Timer,
-  Sword
+  Sword,
+  Database
 } from 'lucide-react';
 import { Stage, QuestionType, Difficulty, GameState } from './types.ts';
 import { ACHIEVEMENTS, STORY_DATA, REWARDS, MATRIX_ADVENTURE_DATA } from './constants.ts';
@@ -43,6 +44,7 @@ import SenseiMatriks from './components/SenseiMatriks.tsx';
 import Certificate from './components/Certificate.tsx';
 import LearningObjectives from './components/LearningObjectives.tsx';
 import { TeacherProfile } from './components/TeacherProfile.tsx';
+import { checkFirebaseConnection } from './src/lib/firebase.ts';
 import confetti from 'canvas-confetti';
 
 interface CertificateProps {
@@ -169,6 +171,14 @@ export default function App() {
   const [showCertificate, setShowCertificate] = useState(false);
   const [showObjectives, setShowObjectives] = useState(false);
   const [showTeacherProfile, setShowTeacherProfile] = useState(false);
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+
+  // Check Firebase connection
+  useEffect(() => {
+    checkFirebaseConnection().then(res => {
+      setDbConnected(res.connected);
+    });
+  }, []);
 
   // Audio setup
   useEffect(() => {
@@ -528,6 +538,22 @@ export default function App() {
         >
           <FloatingMascot />
           
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {dbConnected !== null && (
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border transition-all ${
+                dbConnected 
+                  ? 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30' 
+                  : 'bg-rose-400/20 text-rose-300 border-rose-400/30'
+              }`}>
+                <Database className={dbConnected ? "w-3 h-3 animate-pulse" : "w-3 h-3"} />
+                {dbConnected ? 'DATABASE READY' : 'DATABASE OFFLINE'}
+              </div>
+            )}
+            <div className="px-3 py-1 bg-white/10 text-white/60 border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-yellow-300" /> BETA VERSION
+            </div>
+          </div>
+
           <div 
             style={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -803,6 +829,17 @@ export default function App() {
       {/* Header View */}
       <nav className="relative z-10 flex flex-col md:flex-row items-center justify-between bg-white/20 backdrop-blur-xl border border-white/30 rounded-[2rem] px-8 py-5 shadow-2xl gap-4">
         <div className="flex items-center gap-4">
+          {dbConnected !== null && (
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${
+              dbConnected 
+                ? 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30' 
+                : 'bg-rose-400/20 text-rose-300 border-rose-400/30'
+            }`}>
+              <Database className={dbConnected ? "w-3 h-3 animate-pulse" : "w-3 h-3"} />
+              {dbConnected ? 'DATABASE READY' : 'DATABASE OFFLINE'}
+            </div>
+          )}
+
           <button 
             onClick={backToHome}
             className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/20 transition-all active:scale-95 touch-manipulation group"
