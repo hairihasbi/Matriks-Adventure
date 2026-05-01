@@ -3,26 +3,47 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 // Configuration Firebase menggunakan Environment Variables
+const sanitize = (val: any) => typeof val === 'string' ? val.trim().replace(/^["']|["']$/g, '') : val;
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: sanitize(import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: sanitize(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: sanitize(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: sanitize(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: sanitize(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: sanitize(import.meta.env.VITE_FIREBASE_APP_ID),
+  measurementId: sanitize(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID)
 };
 
-// Inisialisasi Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Validasi dasar konfigurasi
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza');
+
+if (!isConfigValid) {
+  console.error("❌ [Firebase] Konfigurasi tidak valid. Periksa VITE_FIREBASE_API_KEY di environment variables.");
+}
+
+// Inisialisasi Firebase (hanya jika config ada untuk menghindari crash fatal)
+let app = null;
+let authInstance = null;
+let dbInstance = null;
+
+if (isConfigValid) {
+  try {
+    app = initializeApp(firebaseConfig);
+    authInstance = getAuth(app);
+    dbInstance = getFirestore(app);
+  } catch (error) {
+    console.error("❌ [Firebase] Gagal inisialisasi SDK:", error);
+  }
+}
+
+export const auth = authInstance;
+export const db = dbInstance;
 
 // Fungsi untuk mengetes koneksi ke Firestore
 export async function checkFirebaseConnection() {
-  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
-    console.warn("⚠️ [Firebase] VITE_FIREBASE_API_KEY tidak ditemukan. Pastikan sudah diisi di tab Secrets/Settings.");
-    return { connected: false, message: "API Key missing" };
+  if (!isConfigValid || !db) {
+    return { connected: false, message: "Konfigurasi Firebase tidak valid atau belum di-set." };
   }
 
   try {
@@ -32,18 +53,17 @@ export async function checkFirebaseConnection() {
     console.log("✅ [Firebase] Berhasil terhubung ke Firestore.");
     return { connected: true, message: "Connected" };
   } catch (error: any) {
-    console.error("❌ [Firebase] Gagal terhubung:", error);
-    
-    const errMsg = error?.message || "";
-    const errCode = error?.code || "";
+    const errMsg = (error?.message || "").toLowerCase();
+    const errCode = (error?.code || "").toLowerCase();
 
-    // Jika error karena masalah permission, itu artinya koneksi ke server BERHASIL
-    // tapi akses ke dokumen tersebut yang dibatasi.
-    if (errMsg.includes('permission-denied') || errCode === 'permission-denied') {
-       console.info("ℹ️ [Firebase] Terhubung, namun akses ditolak oleh Security Rules (Ini normal jika belum ada data).");
-       return { connected: true, message: "Connected (Auth limited)" };
+    // Jika error adalah permission-denied, artinya KONEKSI BERHASIL 
+    // karena server Firebase merespons (hanya saja akses ditolak).
+    if (errMsg.includes('permission-denied') || errCode.includes('permission-denied')) {
+       console.info("✅ [Firebase] Terhubung! Status: Terkoneksi (Akses ditolak oleh Security Rules).");
+       return { connected: true, message: "Connected (Permission Refused)" };
     }
 
+    console.error("❌ [Firebase] Gagal terhubung ke Firestore:", error);
     return { connected: false, message: errMsg || "Unknown error" };
   }
 }
