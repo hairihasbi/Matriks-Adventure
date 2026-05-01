@@ -37,10 +37,17 @@ export default function MapView({
     type: 'quiz'
   };
 
+  const maxY = quizNode.y + 10;
+
   return (
     <div className="relative w-full max-w-2xl mx-auto h-[450px] md:h-[600px] bg-white/5 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] border border-white/20 p-4 md:p-8 overflow-y-auto overflow-x-hidden scrollbar-hide shadow-inner">
       {/* The Winding Path (SVG) */}
-      <svg className="absolute inset-0 w-full h-[700px] md:h-[800px] pointer-events-none opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <svg 
+        className="absolute inset-0 w-full pointer-events-none opacity-20" 
+        viewBox={`0 0 100 ${maxY}`} 
+        style={{ height: `${maxY * 6}px` }}
+        preserveAspectRatio="none"
+      >
         <path
           d={`M ${nodes[0].x} ${nodes[0].y} ${nodes.map((n, i) => i > 0 ? `L ${n.x} ${n.y}` : '').join(' ')} L ${quizNode.x} ${quizNode.y}`}
           fill="none"
@@ -52,7 +59,7 @@ export default function MapView({
         />
       </svg>
 
-      <div className="relative z-10 w-full min-h-[600px] md:min-h-[700px]">
+      <div className="relative z-10 w-full" style={{ minHeight: `${maxY * 6}px` }}>
         {nodes.map((node, i) => {
           const isCompleted = completedSubTopics.includes(node.id);
           const isActive = currentSubTopicIndex === i && !isQuizActive;

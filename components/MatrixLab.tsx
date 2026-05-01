@@ -13,13 +13,71 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
   const [matrixA, setMatrixA] = useState<number[][]>([[1, 2], [3, 4]]);
   const [matrixB, setMatrixB] = useState<number[][]>([[5, 6], [7, 8]]);
   const [scalar, setScalar] = useState<number>(2);
-  const [operation, setOperation] = useState<'add' | 'sub' | 'mul' | 'scalar' | 'transpose'>('add');
+  const [operation, setOperation] = useState<'add' | 'sub' | 'mul' | 'scalar' | 'transpose' | 'det' | 'cramer' | 'inverse'>('add');
   const [showSteps, setShowSteps] = useState(false);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const performExperiment = () => {
     if (onExperimentPerformed) onExperimentPerformed();
+  };
+
+  const calculateDeterminant = (m: number[][]): number | null => {
+    if (m.length === 2 && m[0].length === 2) {
+      return (m[0][0] * m[1][1]) - (m[0][1] * m[1][0]);
+    }
+    if (m.length === 3 && m[0].length === 3) {
+      // Aturan Sarrus
+      const a = m[0][0], b = m[0][1], c = m[0][2];
+      const d = m[1][0], e = m[1][1], f = m[1][2];
+      const g = m[2][0], h = m[2][1], i = m[2][2];
+      return (a * e * i + b * f * g + c * d * h) - (c * e * g + a * f * h + b * d * i);
+    }
+    return null;
+  };
+
+  const calculateInverse = (m: number[][]): number[][] | null => {
+    const det = calculateDeterminant(m);
+    if (det === null || det === 0) return null;
+
+    if (m.length === 2) {
+      const a = m[0][0], b = m[0][1], c = m[1][0], d = m[1][1];
+      return [
+        [d / det, -b / det],
+        [-c / det, a / det]
+      ].map(row => row.map(val => Number(val.toFixed(2))));
+    }
+
+    if (m.length === 3) {
+      const getMinor = (row: number, col: number) => {
+        const sub = m
+          .filter((_, i) => i !== row)
+          .map(r => r.filter((_, j) => j !== col));
+        return calculateDeterminant(sub);
+      };
+
+      const adjoint: number[][] = [];
+      for (let i = 0; i < 3; i++) {
+        adjoint[i] = [];
+        for (let j = 0; j < 3; j++) {
+          // Kofaktor = (-1)^(i+j) * Minor
+          const sign = (i + j) % 2 === 0 ? 1 : -1;
+          adjoint[i][j] = sign * getMinor(i, j)!;
+        }
+      }
+
+      // Transpose Adjoint
+      const result: number[][] = [];
+      for (let i = 0; i < 3; i++) {
+        result[i] = [];
+        for (let j = 0; j < 3; j++) {
+          result[i][j] = Number((adjoint[j][i] / det).toFixed(2));
+        }
+      }
+      return result;
+    }
+
+    return null;
   };
 
   const updateMatrix = (matrix: 'A' | 'B', row: number, col: number, val: string) => {
@@ -80,6 +138,27 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
             }
           }
           return mulResult;
+        case 'det':
+          const d = calculateDeterminant(matrixA);
+          return d !== null ? [[d]] : null;
+        case 'cramer':
+          if (matrixA.length !== matrixA[0].length || matrixA.length !== matrixB.length) return null;
+          const D = calculateDeterminant(matrixA);
+          if (D === 0 || D === null) return null;
+          const solutions: number[] = [];
+          for (let col = 0; col < matrixA[0].length; col++) {
+            const tempMat = matrixA.map((row, i) => {
+              const newRow = [...row];
+              newRow[col] = matrixB[i][0];
+              return newRow;
+            });
+            const Di = calculateDeterminant(tempMat);
+            if (Di === null) return null;
+            solutions.push(Di / D);
+          }
+          return [solutions];
+        case 'inverse':
+          return calculateInverse(matrixA);
         default:
           return null;
       }
@@ -120,6 +199,50 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
       matrixA.forEach((row, i) => row.forEach((val, j) => {
         steps.push(`Elemen [${i+1},${j+1}] di A menjadi Elemen [${j+1},${i+1}] di Aᵀ`);
       }));
+    } else if (operation === 'det') {
+      if (matrixA.length === 2 && matrixA[0].length === 2) {
+        steps.push(`det(A) = (a*d) - (b*c)`);
+        steps.push(`det(A) = (${matrixA[0][0]}*${matrixA[1][1]}) - (${matrixA[0][1]}*${matrixA[1][0]})`);
+        steps.push(`Hasil = ${calculateDeterminant(matrixA)}`);
+      } else if (matrixA.length === 3 && matrixA[0].length === 3) {
+        steps.push(`Metode Sarrus (Diagonal):`);
+        const a=matrixA[0][0], b=matrixA[0][1], c=matrixA[0][2];
+        const d=matrixA[1][0], e=matrixA[1][1], f=matrixA[1][2];
+        const g=matrixA[2][0], h=matrixA[2][1], i=matrixA[2][2];
+        steps.push(`(+) (${a}*${e}*${i}) + (${b}*${f}*${g}) + (${c}*${d}*${h}) = ${a*e*i + b*f*g + c*d*h}`);
+        steps.push(`(-) (${c}*${e}*${g}) + (${a}*${f}*${h}) + (${b}*${d}*${i}) = ${c*e*g + a*f*h + b*d*i}`);
+        steps.push(`Hasil = ${calculateDeterminant(matrixA)}`);
+      }
+    } else if (operation === 'cramer') {
+      const D = calculateDeterminant(matrixA);
+      steps.push(`Langkah 1: Determinan Utama (D) = ${D}`);
+      if (D === 0) steps.push(`D=0: Tidak ada solusi unik!`);
+      else {
+        matrixA[0].forEach((_, idx) => {
+          const tempMat = matrixA.map((row, i) => {
+            const newRow = [...row];
+            newRow[idx] = matrixB[i][0];
+            return newRow;
+          });
+          const Di = calculateDeterminant(tempMat);
+          steps.push(`Langkah ${idx+2}: D${idx+1} = ${Di} -> Variabel ${idx===0?'x':idx===1?'y':'z'} = ${Di}/${D} = ${Di!/D!}`);
+        });
+      }
+    } else if (operation === 'inverse') {
+      const det = calculateDeterminant(matrixA);
+      steps.push(`Langkah 1: Cek Determinan det(A) = ${det}`);
+      if (det === 0) {
+        steps.push(`det(A) = 0: Matriks Singular (Tidak punya invers)`);
+      } else {
+        if (matrixA.length === 2) {
+          steps.push(`Langkah 2: Gunakan Rumus 1/det * Adjoint`);
+          steps.push(`A⁻¹ = (1/${det}) * [[${matrixA[1][1]}, ${-matrixA[0][1]}], [${-matrixA[1][0]}, ${matrixA[0][0]}]]`);
+        } else if (matrixA.length === 3) {
+          steps.push(`Langkah 2: Cari Matriks Kofaktor`);
+          steps.push(`Langkah 3: Transpose Kofaktor (Adjoint)`);
+          steps.push(`Langkah 4: Kalikan Adjoint dengan 1/det`);
+        }
+      }
     }
     return steps;
   };
@@ -247,9 +370,27 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
               </button>
               <button 
                 onClick={() => setOperation('transpose')}
-                className={`py-3 rounded-xl col-span-2 flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'transpose' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'transpose' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
               >
                 <RefreshCw className="w-4 h-4" /> Transpose (A)
+              </button>
+              <button 
+                onClick={() => setOperation('det')}
+                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'det' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+              >
+                <HelpCircle className="w-4 h-4" /> Det (A)
+              </button>
+              <button 
+                onClick={() => setOperation('cramer')}
+                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'cramer' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+              >
+                <Bot className="w-4 h-4" /> Cramer (SPL)
+              </button>
+              <button 
+                onClick={() => setOperation('inverse')}
+                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'inverse' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+              >
+                <Plus className="w-4 h-4 rotate-45" /> Inverse (A)
               </button>
             </div>
 
@@ -275,14 +416,17 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
               {operation === 'mul' && <X className="w-10 h-10 text-white" />}
               {operation === 'scalar' && <X className="w-10 h-10 text-white" />}
               {operation === 'transpose' && <RefreshCw className="w-10 h-10 text-white" />}
+              {operation === 'det' && <HelpCircle className="w-10 h-10 text-white" />}
+              {operation === 'cramer' && <Bot className="w-10 h-10 text-white" />}
+              {operation === 'inverse' && <RefreshCw className="w-10 h-10 text-white rotate-180" />}
             </div>
             <div className="w-1 h-20 bg-gradient-to-b from-white/20 to-transparent" />
           </div>
         </div>
 
         <div className="space-y-6">
-          {['add', 'sub', 'mul'].includes(operation) && (
-            <InputMatrix title="Matriks B" data={matrixB} onUpdate={(r, c, v) => updateMatrix('B', r, c, v)} />
+          {(['add', 'sub', 'mul'].includes(operation) || (operation === 'cramer')) && (
+            <InputMatrix title={operation === 'cramer' ? "Konstanta Hasil (B)" : "Matriks B"} data={matrixB} onUpdate={(r, c, v) => updateMatrix('B', r, c, v)} />
           )}
 
           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-3xl border border-white/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
