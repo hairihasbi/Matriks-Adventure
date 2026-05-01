@@ -64,12 +64,20 @@ export async function checkStorageConnection() {
   try {
     const storageRef = ref(storage, 'connectivity_test_' + Date.now());
     await getMetadata(storageRef).catch((err) => {
+      // Jika file tidak ditemukan, itu sebenarnya pertanda bagus (artinya kita bisa "melihat" bucket)
       if (err.code === 'storage/object-not-found' || err.message?.includes('object-not-found')) {
         return;
       }
+      // Jika masalah izin, juga berarti koneksi dasar berhasil
       if (err.code === 'storage/unauthorized' || err.message?.toLowerCase().includes('permission')) {
         return;
       }
+      
+      // Deteksi kemungkinan masalah CORS
+      if (err.code === 'storage/unknown' || !err.code) {
+        throw new Error("Kemungkinan masalah CORS. Harap konfigurasi CORS di Google Cloud Console.");
+      }
+      
       throw err;
     });
     
