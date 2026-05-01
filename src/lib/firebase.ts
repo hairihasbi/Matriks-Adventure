@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getStorage, ref, getMetadata } from 'firebase/storage';
 
 // Configuration Firebase menggunakan Environment Variables
 const sanitize = (val: any) => typeof val === 'string' ? val.trim().replace(/^["']|["']$/g, '') : val;
@@ -16,22 +17,33 @@ const firebaseConfig = {
 };
 
 // Validasi dasar konfigurasi
-const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza');
+const hasApiKey = !!firebaseConfig.apiKey;
+const hasProjectId = !!firebaseConfig.projectId;
+const isConfigValid = hasApiKey && hasProjectId;
 
 if (!isConfigValid) {
-  console.error("❌ [Firebase] Konfigurasi tidak valid. Periksa VITE_FIREBASE_API_KEY di environment variables.");
+  if (!hasApiKey) {
+    console.error("❌ [Firebase] VITE_FIREBASE_API_KEY tidak ditemukan. Harap masukkan di tab Settings/Secrets.");
+  }
+  if (!hasProjectId) {
+    console.error("❌ [Firebase] VITE_FIREBASE_PROJECT_ID tidak ditemukan. Harap masukkan di tab Settings/Secrets.");
+  }
+} else if (!firebaseConfig.apiKey.startsWith('AIza')) {
+  console.warn("⚠️ [Firebase] API Key biasanya dimulai dengan 'AIza'. Pastikan kunci yang Anda masukkan sudah benar.");
 }
 
 // Inisialisasi Firebase (hanya jika config ada untuk menghindari crash fatal)
 let app = null;
 let authInstance = null;
 let dbInstance = null;
+let storageInstance = null;
 
 if (isConfigValid) {
   try {
     app = initializeApp(firebaseConfig);
     authInstance = getAuth(app);
     dbInstance = getFirestore(app);
+    storageInstance = getStorage(app);
   } catch (error) {
     console.error("❌ [Firebase] Gagal inisialisasi SDK:", error);
   }
@@ -39,6 +51,35 @@ if (isConfigValid) {
 
 export const auth = authInstance;
 export const db = dbInstance;
+export const storage = storageInstance;
+
+/**
+ * Fungsi untuk mengetes koneksi ke Firebase Storage
+ */
+export async function checkStorageConnection() {
+  if (!storage || !firebaseConfig.storageBucket) {
+    return { connected: false, message: "Storage Bucket tidak dikonfigurasi." };
+  }
+
+  try {
+    const storageRef = ref(storage, 'connectivity_test_' + Date.now());
+    await getMetadata(storageRef).catch((err) => {
+      if (err.code === 'storage/object-not-found' || err.message?.includes('object-not-found')) {
+        return;
+      }
+      if (err.code === 'storage/unauthorized' || err.message?.toLowerCase().includes('permission')) {
+        return;
+      }
+      throw err;
+    });
+    
+    console.log("✅ [Firebase] Storage terhubung.");
+    return { connected: true, message: "Connected" };
+  } catch (error: any) {
+    console.error("❌ [Firebase] Storage Error:", error);
+    return { connected: false, message: error?.message || "Storage connection failed" };
+  }
+}
 
 // Fungsi untuk mengetes koneksi ke Firestore
 export async function checkFirebaseConnection() {
