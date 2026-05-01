@@ -21,20 +21,30 @@ export const db = getFirestore(app);
 // Fungsi untuk mengetes koneksi ke Firestore
 export async function checkFirebaseConnection() {
   if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+    console.warn("⚠️ [Firebase] VITE_FIREBASE_API_KEY tidak ditemukan. Pastikan sudah diisi di tab Secrets/Settings.");
     return { connected: false, message: "API Key missing" };
   }
 
   try {
     // Mencoba mengambil dokumen dummy untuk verifikasi koneksi
+    // snapshot tetap valid meskipun dokumen tidak ada (does not exist)
     await getDocFromServer(doc(db, 'connection_test', 'verify'));
+    console.log("✅ [Firebase] Berhasil terhubung ke Firestore.");
     return { connected: true, message: "Connected" };
   } catch (error: any) {
-    if (error?.message?.includes('offline') || error?.message?.includes('permission-denied')) {
-       // permission-denied actually means we reached the server but don't have access to this specific doc, 
-       // which still means the connection itself is working.
+    console.error("❌ [Firebase] Gagal terhubung:", error);
+    
+    const errMsg = error?.message || "";
+    const errCode = error?.code || "";
+
+    // Jika error karena masalah permission, itu artinya koneksi ke server BERHASIL
+    // tapi akses ke dokumen tersebut yang dibatasi.
+    if (errMsg.includes('permission-denied') || errCode === 'permission-denied') {
+       console.info("ℹ️ [Firebase] Terhubung, namun akses ditolak oleh Security Rules (Ini normal jika belum ada data).");
        return { connected: true, message: "Connected (Auth limited)" };
     }
-    return { connected: false, message: error?.message || "Unknown error" };
+
+    return { connected: false, message: errMsg || "Unknown error" };
   }
 }
 
