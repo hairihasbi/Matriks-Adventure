@@ -40,9 +40,9 @@ export default function MapView({
   return (
     <div className="relative w-full max-w-2xl mx-auto h-[450px] md:h-[600px] bg-white/5 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] border border-white/20 p-4 md:p-8 overflow-y-auto overflow-x-hidden scrollbar-hide shadow-inner">
       {/* The Winding Path (SVG) */}
-      <svg className="absolute inset-0 w-full h-[700px] md:h-[800px] pointer-events-none opacity-20" preserveAspectRatio="none">
+      <svg className="absolute inset-0 w-full h-[700px] md:h-[800px] pointer-events-none opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
         <path
-          d={`M ${nodes[0].x + 25}% ${nodes[0].y}% ${nodes.map((n, i) => i > 0 ? `L ${n.x + 25}% ${n.y}%` : '').join(' ')} L ${quizNode.x + 25}% ${quizNode.y}%`}
+          d={`M ${nodes[0].x} ${nodes[0].y} ${nodes.map((n, i) => i > 0 ? `L ${n.x} ${n.y}` : '').join(' ')} L ${quizNode.x} ${quizNode.y}`}
           fill="none"
           stroke="white"
           strokeWidth="6"
