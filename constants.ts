@@ -602,6 +602,210 @@ Ingat: A² ≠ elemen dikuadratkan satu per satu, melainkan hasil perkalian matr
         difficulty: Difficulty.HARD
       }
     ]
+  },
+  {
+    id: 'stage-5',
+    title: 'Benteng Determinan (Advanced)',
+    description: 'SELAMAT! Kamu telah sampai di level Advanced. Ini adalah wilayah dengan kesulitan tinggi yang membutuhkan ketajaman logika dan perjuangan besar. Di sini kamu akan menguasai "Nilai Penentu" dari sebuah matriks.',
+    subTopics: [
+      {
+        id: 'st5-1',
+        title: '1. Determinan Matriks Ordo 2x2',
+        content: `Determinan adalah nilai skalar (angka tunggal) yang dapat dihitung dari elemen-elemen matriks persegi. Untuk matriks A = [[a, b], [c, d]], determinannya (ditulis det(A) atau |A|) dihitung dengan rumus:
+
+det(A) = (a × d) - (b × c)
+
+**Penerapan Nyata:** Digunakan dalam grafik komputer untuk menghitung luas area yang ter-transformasi atau mengecek apakah sebuah objek berputar searah jarum jam atau tidak.`,
+        examples: [
+          { label: 'A = [[3, 2], [1, 4]]', data: [[3, 2], [1, 4]] },
+          { label: 'det(A) = (3*4) - (2*1) = 12 - 2 = 10', data: [[10]] }
+        ]
+      },
+      {
+        id: 'st5-2',
+        title: '2. Menyelesaikan SPLDV dengan Determinan (Metode Cramer)',
+        content: `Metode Cramer menggunakan determinan untuk mencari nilai variabel dalam Sistem Persamaan Linear Dua Variabel (SPLDV).
+Jika ada persamaan:
+ax + by = e
+cx + dy = f
+
+Maka:
+x = Dx / D  dan  y = Dy / D
+di mana:
+D  = det([[a, b], [c, d]]) (Determinan Utama)
+Dx = det([[e, b], [f, d]]) (Ganti kolom x dengan hasil)
+Dy = det([[a, e], [c, f]]) (Ganti kolom y dengan hasil)`,
+        examples: [
+          { label: 'SPLDV: 2x + y = 5 dan 3x - 2y = 4', data: [[2, 1], [3, -2]] },
+          { label: 'D = -7, Dx = -14, Dy = -7 -> x=2, y=1', data: [[2], [1]] }
+        ]
+      },
+      {
+        id: 'st5-3',
+        title: '3. Determinan Matriks Ordo 3x3 (Metode Sarrus)',
+        content: `Untuk ordo 3x3, kita menggunakan Aturan Sarrus. Bayangkan kamu menyalin dua kolom pertama ke sebelah kanan matriks, lalu mengalikan elemen secara diagonal:
+(Kanan Bawah) - (Kanan Atas)
+
+**Penerapan Nyata:** Dalam navigasi penerbangan, perhitungan 3x3 digunakan untuk menentukan orientasi pesawat di ruang 3D (Roll, Pitch, Yaw).`,
+        examples: [
+          { label: 'A = [[1, 2, 3], [0, 1, 4], [5, 6, 0]]', data: [[1, 2, 3], [0, 1, 4], [5, 6, 0]] },
+          { label: 'det(A) = (Sarrus Result) = 1', data: [[1]] }
+        ]
+      },
+      {
+        id: 'st5-4',
+        title: '4. Expansi Kofaktor dan Minor',
+        content: `Minor (Mᵢⱼ) adalah determinan dari matriks yang tersisa setelah kita menghapus baris ke-i dan kolom ke-j.
+Kofaktor (Cᵢⱼ) adalah Minor yang diberi tanda (+ atau -) berdasarkan posisinya: (-1)ᶦ⁺ʲ.
+
+Metode ini sangat ampuh karena bisa digunakan untuk menghitung determinan matriks dengan ordo apa pun (bahkan 4x4 atau lebih besar!).`,
+        examples: [
+          { label: 'A = [[1, 2], [3, 4]]', data: [[1, 2], [3, 4]] },
+          { label: 'Minor M11 = 4, Kofaktor C11 = +4', data: [[4]] }
+        ]
+      },
+      {
+        id: 'st5-5',
+        title: '5. Menyelesaikan SPLTV (3 Variabel) dengan Cramer',
+        content: `Sama seperti SPLDV, Sistem Persamaan Linear Tiga Variabel (SPLTV) dapat diselesaikan dengan:
+x = Dx/D, y = Dy/D, z = Dz/D.
+
+Di sini D adalah determinan 3x3 dari koefisien variabel. Metode ini sangat teratur dan sering digunakan dalam algoritma komputer untuk menyelesaikan masalah teknik sipil seperti perhitungan beban pada jembatan.`,
+        examples: [
+          { label: 'Misal D=10, Dx=20, Dy=30, Dz=40', data: [[10], [20], [30], [40]] },
+          { label: 'Hasil: x=2, y=3, z=4', data: [[2, 3, 4]] }
+        ]
+      }
+    ],
+    quizzes: [
+      {
+        id: 'q5-1',
+        type: QuestionType.FILL_IN_BLANKS,
+        question: 'Hitung determinan dari [[5, 2], [3, 4]]!',
+        correctAnswer: '14',
+        explanation: '(5*4) - (2*3) = 20 - 6 = 14.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q5-2',
+        type: QuestionType.MULTIPLE_CHOICE,
+        question: 'Dalam Metode Cramer, jika D = 0, maka sistem tersebut...',
+        options: ['Tidak memiliki solusi unik', 'Pasti memiliki satu solusi', 'Berubah jadi matriks nol', 'Menjadi mudah dikerjakan'],
+        correctAnswer: 'Tidak memiliki solusi unik',
+        explanation: 'Pembagian dengan nol (D=0) berarti variabel tidak dapat ditentukan secara unik.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q5-3',
+        type: QuestionType.COMPLEX_MC,
+        question: 'Mana saja yang benar mengenai Aturan Sarrus?',
+        options: ['Hanya untuk 3x3', 'Bisa untuk 2x2', 'Bisa untuk 4x4', 'Melibatkan diagonal'],
+        correctAnswer: ['Hanya untuk 3x3', 'Melibatkan diagonal'],
+        explanation: 'Aturan Sarrus spesifik untuk ordo 3x3.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q5-4',
+        type: QuestionType.FILL_IN_BLANKS,
+        question: 'Jika matriks A memuat elemen a11=1 di posisi baris 1 kolom 1, dan Minor M11-nya adalah 10, berapakah nilai Kofaktor C11-nya?',
+        correctAnswer: '10',
+        explanation: 'Karena baris 1 + kolom 1 = 2 (genap), maka tanda kofaktor adalah positif (+). C11 = +M11 = 10.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q5-5',
+        type: QuestionType.MULTIPLE_CHOICE,
+        question: 'Pada SPLTV 3 variabel, jika kita ingin mencari nilai variabel Z mengunakan Metode Cramer, maka determinan Dz didapat dengan mengganti...',
+        options: [
+          'Kolom ketiga dengan konstanta hasil',
+          'Baris ketiga dengan angka nol',
+          'Kolom pertama dengan variabel X',
+          'Seluruh diagonal dengan angka satu'
+        ],
+        correctAnswer: 'Kolom ketiga dengan konstanta hasil',
+        explanation: 'Untuk mencari variabel ke-n (Z adalah variabel ke-3), kita mengganti kolom ke-n pada matriks koefisien dengan kolom hasil (konstanta).',
+        difficulty: Difficulty.HARD
+      }
+    ]
+  },
+  {
+    id: 'stage-6',
+    title: 'Gerbang Invers (Final Mastery)',
+    description: 'Selamat datang di puncak perjalanan! Di sini kamu akan mempelajari "Kebalikan" dari sebuah matriks. Invers adalah kunci untuk membuka pintu rahasia dalam kriptografi dan sistem kontrol otomatis.',
+    subTopics: [
+      {
+        id: 'st6-1',
+        title: '1. Invers Matriks Ordo 2x2',
+        content: `Invers matriks A (ditulis A⁻¹) adalah matriks yang jika dikalikan dengan A akan menghasilkan Matriks Identitas (I).
+Untuk A = [[a, b], [c, d]], rumusnya adalah:
+A⁻¹ = (1/det(A)) * [[d, -b], [-c, a]]
+
+**Syarat:** det(A) ≠ 0. Jika det(A) = 0, matriks disebut "Singular" dan tidak punya invers.
+
+**Penerapan Nyata:** Kriptografi (Sandi Hill). Invers digunakan untuk mendeskripsi (membaca balik) pesan rahasia yang telah diacak.`,
+        examples: [
+          { label: 'A = [[4, 1], [7, 2]]', data: [[4, 1], [7, 2]] },
+          { label: 'det(A)=1, A⁻¹ = [[2, -1], [-7, 4]]', data: [[2, -1], [-7, 4]] }
+        ]
+      },
+      {
+        id: 'st6-2',
+        title: '2. Invers Matriks Ordo 3x3 (Adjoint)',
+        content: `Untuk ordo 3x3, prosesnya lebih menantang:
+1. Cari Matriks Kofaktor.
+2. Transpose matriks kofaktor tersebut untuk mendapatkan Matriks Adjoint, adj(A).
+3. Gunakan rumus: A⁻¹ = (1/det(A)) * adj(A).
+
+Ini membutuhkan ketelitian tinggi dalam menghitung 9 sub-determinan (Minor).`,
+        examples: [
+          { label: 'A = [[1, 0, 1], [0, 2, 0], [1, 0, 2]]', data: [[1, 0, 1], [0, 2, 0], [1, 0, 2]] },
+          { label: 'det(A)=2, A⁻¹ = [[1, 0, -0.5], [0, 0.5, 0], [-0.5, 0, 0.5]]', data: [[1, 0, -0.5], [0, 0.5, 0], [-0.5, 0, 0.5]] }
+        ]
+      },
+      {
+        id: 'st6-3',
+        title: '3. Menyelesaikan SPL dengan Invers',
+        content: `Sistem Persamaan Linear dapat ditulis sebagai: AX = B.
+Untuk mencari variabel X, kita kalikan kedua ruas dengan A⁻¹ dari depan:
+X = A⁻¹ * B
+
+Ini adalah cara alternatif selain Metode Cramer yang sangat berguna dalam pemrograman komputer.
+
+**Penerapan Nyata:** Analisis struktur bangunan. Invers digunakan untuk menghitung gaya-gaya dalam yang berlawanan arah untuk menjaga kestabilan gedung bertingkat.`,
+        examples: [
+          { label: 'AX = B -> X = A⁻¹B', data: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
+          { label: 'Jika A⁻¹ dan B diketahui, X langsung didapat.', data: [[1]] }
+        ]
+      }
+    ],
+    quizzes: [
+      {
+        id: 'q6-1',
+        type: QuestionType.MULTIPLE_CHOICE,
+        question: 'Matriks yang tidak memiliki invers disebut matriks...',
+        options: ['Singular', 'Identitas', 'Transpose', 'Diagonal'],
+        correctAnswer: 'Singular',
+        explanation: 'Matriks Singular memiliki determinan = 0, sehingga pembagian 1/det tidak bisa dilakukan.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q6-2',
+        type: QuestionType.FILL_IN_BLANKS,
+        question: 'Cari det(A) dari [[2, 4], [1, 2]]! Apakah matriks ini punya invers?',
+        correctAnswer: '0',
+        explanation: '(2*2) - (4*1) = 0. Jadi tidak punya invers.',
+        difficulty: Difficulty.HARD
+      },
+      {
+        id: 'q6-3',
+        type: QuestionType.COMPLEX_MC,
+        question: 'Urutan langkah mencari invers 3x3 yang benar adalah...',
+        options: ['Cari Determinan', 'Cari Kofaktor', 'Transpose Kofaktor (Adjoint)', 'Kalikan 1/det'],
+        correctAnswer: ['Cari Determinan', 'Cari Kofaktor', 'Transpose Kofaktor (Adjoint)', 'Kalikan 1/det'],
+        explanation: 'Semua langkah tersebut harus dilakukan secara berurutan.',
+        difficulty: Difficulty.HARD
+      }
+    ]
   }
 ];
 
@@ -634,7 +838,9 @@ export const STORY_DATA = {
     streakHigh: "Ketukan mantap! Kamu sedang berada dalam 'flow' matematika yang sempurna. Jangan berhenti!",
     quizCorrect: "Tepat sekali! Kode dimensi telah terpecahkan.",
     quizWrong: "Jangan menyerah. Matriks selalu memberikan kesempatan kedua bagi mereka yang mau belajar.",
-    labIntro: "Selamat datang di Lab Matrix. Di sini, kamu adalah arsitek dari dimensimu sendiri. Eksperimenlah sesukamu!"
+    labIntro: "Selamat datang di Lab Matrix. Di sini, kamu adalah arsitek dari dimensimu sendiri. Eksperimenlah sesukamu!",
+    advancedWarning: "PERINGATAN: Kamu memasuki wilayah Benteng Determinan. Ini adalah level Advanced yang membutuhkan konsentrasi penuh dan perjuangan besar. Siapkan logikamu!",
+    finalMastery: "SELAMAT! Kamu berada di Stage Akhir: Gerbang Invers. Ini adalah puncak ilmu matriks. Hanya sedikit yang sampai di sini. Tunjukkan kemampuan terbaikmu!"
   }
 };
 

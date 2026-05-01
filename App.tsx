@@ -360,7 +360,14 @@ export default function App() {
       setCurrentQuizIndex(0);
       setStageFinished(false);
       setViewMode('map');
-      setCurrentDialogue(STORY_DATA.dialogues.stageComplete);
+      
+      if (gameState.currentStageIndex + 1 === 4) { // Stage 5 (index 4)
+        setCurrentDialogue(STORY_DATA.dialogues.advancedWarning);
+      } else if (gameState.currentStageIndex + 1 === 5) { // Stage 6 (index 5)
+        setCurrentDialogue(STORY_DATA.dialogues.finalMastery);
+      } else {
+        setCurrentDialogue(STORY_DATA.dialogues.stageComplete);
+      }
       
       // Check for Grandmaster achievement (finish level 4 on HARD)
       const currentAchievements = gameState.achievements || [];
