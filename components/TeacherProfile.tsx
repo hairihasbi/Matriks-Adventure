@@ -32,9 +32,12 @@ export const TeacherProfile: React.FC<TeacherProfileProps> = ({ onClose }) => {
           <div className="md:w-1/3 bg-indigo-600 p-8 flex flex-col items-center text-center text-white">
             <div className="w-28 h-28 bg-white rounded-3xl mb-4 overflow-hidden border-4 border-indigo-400 shadow-xl rotate-3">
               <img 
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Hairi" 
-                alt="Teacher Profile"
+                src="/teacher_profile.jpg" 
+                alt="Hairi Hasbi"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hairi';
+                }}
               />
             </div>
             <h3 className="text-lg font-black mb-1">Hairi Hasbi</h3>
