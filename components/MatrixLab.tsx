@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Minus, X, RefreshCw } from 'lucide-react';
 import MatrixDisplay from './MatrixDisplay.tsx';
-import { Info, HelpCircle, Bot, Loader2 } from 'lucide-react';
+import { Info, HelpCircle, Bot, Loader2, Box } from 'lucide-react';
 import { explainLabOperation } from '../services/geminiService';
+import Matrix3DVisualizer from './Matrix3DVisualizer';
 
 interface MatrixLabProps {
   onExperimentPerformed?: () => void;
@@ -17,6 +18,7 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
   const [showSteps, setShowSteps] = useState(false);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [show3D, setShow3D] = useState(false);
 
   const performExperiment = () => {
     if (onExperimentPerformed) onExperimentPerformed();
@@ -338,176 +340,231 @@ const MatrixLab: React.FC<MatrixLabProps> = ({ onExperimentPerformed }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="space-y-6">
-          <InputMatrix title="Matriks A" data={matrixA} onUpdate={(r, c, v) => updateMatrix('A', r, c, v)} />
-          
-          <div className="bg-indigo-600/20 p-6 rounded-3xl border border-indigo-500/30">
-            <h4 className="text-indigo-300 text-xs font-black uppercase tracking-widest mb-4">Pilih Operasi</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                onClick={() => setOperation('add')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'add' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <Plus className="w-4 h-4" /> Tambah
-              </button>
-              <button 
-                onClick={() => setOperation('sub')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'sub' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <Minus className="w-4 h-4" /> Kurang
-              </button>
-              <button 
-                onClick={() => setOperation('scalar')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'scalar' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <X className="w-4 h-4" /> Skalar
-              </button>
-              <button 
-                onClick={() => setOperation('mul')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'mul' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <X className="w-4 h-4" /> Kali
-              </button>
-              <button 
-                onClick={() => setOperation('transpose')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'transpose' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <RefreshCw className="w-4 h-4" /> Transpose (A)
-              </button>
-              <button 
-                onClick={() => setOperation('det')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'det' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <HelpCircle className="w-4 h-4" /> Det (A)
-              </button>
-              <button 
-                onClick={() => setOperation('cramer')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'cramer' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <Bot className="w-4 h-4" /> Cramer (SPL)
-              </button>
-              <button 
-                onClick={() => setOperation('inverse')}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'inverse' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
-              >
-                <Plus className="w-4 h-4 rotate-45" /> Inverse (A)
-              </button>
-            </div>
-
-            {operation === 'scalar' && (
-              <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
-                <label className="text-[10px] text-white/40 font-black uppercase tracking-widest block mb-2">Nilai Skalar (k)</label>
-                <input 
-                  type="number"
-                  value={scalar}
-                  onChange={(e) => setScalar(parseInt(e.target.value) || 0)}
-                  className="w-full bg-white/10 border border-white/20 rounded-lg py-2 text-center text-white font-black"
-                />
+        {show3D && matrixA.length === 3 && matrixA[0].length === 3 ? (
+          <>
+            <div className="lg:col-span-2 order-2 lg:order-1">
+              <Matrix3DVisualizer matrix={matrixA} />
+              <div className="mt-6 p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
+                <h4 className="text-white/60 text-xs font-black uppercase tracking-widest mb-4">Analisis Transformasi Linier</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-white/40 font-bold uppercase mb-1">Vektor Basis i'</p>
+                    <p className="text-white font-mono text-xs">[{matrixA[0][0]}, {matrixA[1][0]}, {matrixA[2][0]}]</p>
+                  </div>
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-white/40 font-bold uppercase mb-1">Vektor Basis j'</p>
+                    <p className="text-white font-mono text-xs">[{matrixA[0][1]}, {matrixA[1][1]}, {matrixA[2][1]}]</p>
+                  </div>
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-white/40 font-bold uppercase mb-1">Vektor Basis k'</p>
+                    <p className="text-white font-mono text-xs">[{matrixA[0][2]}, {matrixA[1][2]}, {matrixA[2][2]}]</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center py-10 lg:py-0">
-          <div className="flex flex-col items-center gap-4">
-            <div className="p-6 bg-white/10 rounded-full border border-white/20 shadow-2xl animate-pulse">
-              {operation === 'add' && <Plus className="w-10 h-10 text-white" />}
-              {operation === 'sub' && <Minus className="w-10 h-10 text-white" />}
-              {operation === 'mul' && <X className="w-10 h-10 text-white" />}
-              {operation === 'scalar' && <X className="w-10 h-10 text-white" />}
-              {operation === 'transpose' && <RefreshCw className="w-10 h-10 text-white" />}
-              {operation === 'det' && <HelpCircle className="w-10 h-10 text-white" />}
-              {operation === 'cramer' && <Bot className="w-10 h-10 text-white" />}
-              {operation === 'inverse' && <RefreshCw className="w-10 h-10 text-white rotate-180" />}
             </div>
-            <div className="w-1 h-20 bg-gradient-to-b from-white/20 to-transparent" />
-          </div>
-        </div>
+            <div className="order-1 lg:order-2 space-y-6">
+              <InputMatrix title="Ubah Matriks (Live)" data={matrixA} onUpdate={(r, c, v) => updateMatrix('A', r, c, v)} />
+              <div className="bg-indigo-600/30 p-6 rounded-3xl border border-indigo-400/30">
+                <h4 className="text-indigo-200 text-xs font-black uppercase tracking-widest mb-3 italic">Sensei Note</h4>
+                <p className="text-[10px] text-indigo-100/70 leading-relaxed font-medium">
+                  Setiap kolom matriks (i', j', k') menentukan ke mana vektor basis (1,0,0), (0,1,0), dan (0,0,1) berpindah. Inilah inti dari Transformasi Linier!
+                </p>
+                <button 
+                  onClick={() => setShow3D(false)}
+                  className="w-full mt-4 py-2 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase hover:bg-white/20 transition-all"
+                >
+                  Kembali ke Kalkulator
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-6">
+              <InputMatrix title="Matriks A" data={matrixA} onUpdate={(r, c, v) => updateMatrix('A', r, c, v)} />
+              
+              {matrixA.length === 3 && matrixA[0].length === 3 && (
+                <button
+                  onClick={() => setShow3D(!show3D)}
+                  className={`w-full py-4 rounded-3xl border-2 flex items-center justify-center gap-3 font-black transition-all active:scale-95 ${
+                    show3D 
+                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' 
+                      : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <Box className="w-5 h-5" />
+                  {show3D ? 'Sembunyikan Visualisasi 3D' : 'Aktifkan Visualisasi 3D'}
+                </button>
+              )}
 
-        <div className="space-y-6">
-          {(['add', 'sub', 'mul'].includes(operation) || (operation === 'cramer')) && (
-            <InputMatrix title={operation === 'cramer' ? "Konstanta Hasil (B)" : "Matriks B"} data={matrixB} onUpdate={(r, c, v) => updateMatrix('B', r, c, v)} />
-          )}
-
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-3xl border border-white/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
-            <h4 className="text-white/60 text-xs font-black uppercase tracking-widest mb-6 text-center">Hasil Kalkulasi</h4>
-            {result ? (
-              <div className="space-y-6">
-                <div className="flex justify-center">
-                  <MatrixDisplay data={result} />
-                </div>
-                
-                <div className="flex flex-col gap-2">
+              <div className="bg-indigo-600/20 p-6 rounded-3xl border border-indigo-500/30">
+                <h4 className="text-indigo-300 text-xs font-black uppercase tracking-widest mb-4">Pilih Operasi</h4>
+                <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={() => { setShowSteps(!showSteps); performExperiment(); }}
-                    className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-white font-black text-xs flex items-center justify-center gap-2 transition-all"
+                    onClick={() => setOperation('add')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'add' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
                   >
-                    <Info className="w-4 h-4" /> {showSteps ? 'Sembunyikan Cara Kerja' : 'Lihat Cara Kerja'}
+                    <Plus className="w-4 h-4" /> Tambah
                   </button>
-
                   <button 
-                    onClick={handleAskSensei}
-                    disabled={isAiLoading}
-                    className="w-full py-3 bg-yellow-400 text-indigo-900 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                    onClick={() => setOperation('sub')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'sub' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
                   >
-                    {isAiLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Bot className="w-4 h-4" />
-                    )}
-                    Tanya Sensei Matriks
+                    <Minus className="w-4 h-4" /> Kurang
+                  </button>
+                  <button 
+                    onClick={() => setOperation('scalar')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'scalar' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <X className="w-4 h-4" /> Skalar
+                  </button>
+                  <button 
+                    onClick={() => setOperation('mul')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'mul' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <X className="w-4 h-4" /> Kali
+                  </button>
+                  <button 
+                    onClick={() => setOperation('transpose')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'transpose' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <RefreshCw className="w-4 h-4" /> Transpose (A)
+                  </button>
+                  <button 
+                    onClick={() => setOperation('det')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'det' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <HelpCircle className="w-4 h-4" /> Det (A)
+                  </button>
+                  <button 
+                    onClick={() => setOperation('cramer')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'cramer' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <Bot className="w-4 h-4" /> Cramer (SPL)
+                  </button>
+                  <button 
+                    onClick={() => setOperation('inverse')}
+                    className={`py-3 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all ${operation === 'inverse' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+                  >
+                    <Plus className="w-4 h-4 rotate-45" /> Inverse (A)
                   </button>
                 </div>
 
-                <AnimatePresence>
-                  {aiExplanation && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white/10 p-4 rounded-2xl border border-white/20 relative"
-                    >
+                {operation === 'scalar' && (
+                  <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <label className="text-[10px] text-white/40 font-black uppercase tracking-widest block mb-2">Nilai Skalar (k)</label>
+                    <input 
+                      type="number"
+                      value={scalar}
+                      onChange={(e) => setScalar(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white/10 border border-white/20 rounded-lg py-2 text-center text-white font-black"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center py-10 lg:py-0">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-6 bg-white/10 rounded-full border border-white/20 shadow-2xl animate-pulse">
+                  {operation === 'add' && <Plus className="w-10 h-10 text-white" />}
+                  {operation === 'sub' && <Minus className="w-10 h-10 text-white" />}
+                  {operation === 'mul' && <X className="w-10 h-10 text-white" />}
+                  {operation === 'scalar' && <X className="w-10 h-10 text-white" />}
+                  {operation === 'transpose' && <RefreshCw className="w-10 h-10 text-white" />}
+                  {operation === 'det' && <HelpCircle className="w-10 h-10 text-white" />}
+                  {operation === 'cramer' && <Bot className="w-10 h-10 text-white" />}
+                  {operation === 'inverse' && <RefreshCw className="w-10 h-10 text-white rotate-180" />}
+                </div>
+                <div className="w-1 h-20 bg-gradient-to-b from-white/20 to-transparent" />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {(['add', 'sub', 'mul'].includes(operation) || (operation === 'cramer')) && (
+                <InputMatrix title={operation === 'cramer' ? "Konstanta Hasil (B)" : "Matriks B"} data={matrixB} onUpdate={(r, c, v) => updateMatrix('B', r, c, v)} />
+              )}
+
+              <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-3xl border border-white/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
+                <h4 className="text-white/60 text-xs font-black uppercase tracking-widest mb-6 text-center">Hasil Kalkulasi</h4>
+                {result ? (
+                  <div className="space-y-6">
+                    <div className="flex justify-center">
+                      <MatrixDisplay data={result} />
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
                       <button 
-                        onClick={() => setAiExplanation(null)}
-                        className="absolute top-2 right-2 text-white/50 hover:text-white"
+                        onClick={() => { setShowSteps(!showSteps); performExperiment(); }}
+                        className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-white font-black text-xs flex items-center justify-center gap-2 transition-all"
                       >
-                        <X className="w-3 h-3" />
+                        <Info className="w-4 h-4" /> {showSteps ? 'Sembunyikan Cara Kerja' : 'Lihat Cara Kerja'}
                       </button>
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex-shrink-0 flex items-center justify-center">
-                          <Bot className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="text-[11px] text-white leading-relaxed font-medium italic">
-                          {aiExplanation}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                  {showSteps && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="bg-black/20 rounded-xl p-4 space-y-2 border border-white/5">
-                        {steps.map((step, idx) => (
-                          <p key={idx} className="text-[11px] text-indigo-100 font-mono italic opacity-80 border-b border-white/5 last:border-0 pb-1">
-                            {step}
-                          </p>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-white/50 text-sm font-medium italic">Matematika Tidak Valid.<br/>Cek ordo matriks Anda!</p>
-              </div>
-            )}
-          </div>
 
-        </div>
+                      <button 
+                        onClick={handleAskSensei}
+                        disabled={isAiLoading}
+                        className="w-full py-3 bg-yellow-400 text-indigo-900 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {isAiLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Bot className="w-4 h-4" />
+                        )}
+                        Tanya Sensei Matriks
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {aiExplanation && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white/10 p-4 rounded-2xl border border-white/20 relative"
+                        >
+                          <button 
+                            onClick={() => setAiExplanation(null)}
+                            className="absolute top-2 right-2 text-white/50 hover:text-white"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <div className="flex gap-3">
+                            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex-shrink-0 flex items-center justify-center">
+                              <Bot className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="text-[11px] text-white leading-relaxed font-medium italic">
+                              {aiExplanation}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                      {showSteps && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="bg-black/20 rounded-xl p-4 space-y-2 border border-white/5">
+                            {steps.map((step, idx) => (
+                              <p key={idx} className="text-[11px] text-indigo-100 font-mono italic opacity-80 border-b border-white/5 last:border-0 pb-1">
+                                {step}
+                              </p>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <p className="text-white/50 text-sm font-medium italic">Matematika Tidak Valid.<br/>Cek ordo matriks Anda!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
