@@ -14,24 +14,46 @@ const Certificate: React.FC<CertificateProps> = ({ score, difficulty, date, onCl
   const certificateRef = useRef<HTMLDivElement>(null);
   const [fullName, setFullName] = useState('');
   const [isFinalized, setIsFinalized] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadCertificate = async () => {
-    if (!certificateRef.current) return;
+    if (!certificateRef.current || isDownloading) return;
+    setIsDownloading(true);
     
     try {
       const canvas = await html2canvas(certificateRef.current, {
-        scale: 2,
+        scale: 3,
         backgroundColor: '#0f172a',
+        useCORS: true,
         logging: false,
+        allowTaint: true,
+        // Sometimes needed for mobile/iframe environments
+        windowWidth: certificateRef.current.scrollWidth,
+        windowHeight: certificateRef.current.scrollHeight,
       });
       
-      const image = canvas.toDataURL("image/png", 1.0);
-      const link = document.createElement('a');
-      link.download = `Sertifikat_Matriks_${fullName.replace(/\s+/g, '_')}.png`;
-      link.href = image;
-      link.click();
+      canvas.toBlob((blob) => {
+        if (!blob) throw new Error("Gagal membuat blob gambar");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = url;
+        link.download = `Sertifikat_Master_Matriks_${fullName.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+        setIsDownloading(false);
+      }, 'image/png');
     } catch (err) {
       console.error("Gagal mengunduh sertifikat:", err);
+      setIsDownloading(false);
+      // Give user feedback if it fails
+      alert("Maaf, gagal menyimpan sertifikat. Jika masalah berlanjut, silakan ambil tangkapan layar (screenshot) sebagai alternatif.");
     }
   };
 
@@ -171,9 +193,19 @@ const Certificate: React.FC<CertificateProps> = ({ score, difficulty, date, onCl
         <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
             <button 
                 onClick={downloadCertificate}
-                className="w-full md:w-auto px-10 py-5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 active:scale-95"
+                disabled={isDownloading}
+                className="w-full md:w-auto px-10 py-5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
             >
-                <Download className="w-6 h-6" /> Simpan Sertifikat (PNG)
+                {isDownloading ? (
+                   <>
+                     <div className="w-5 h-5 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                     Memproses...
+                   </>
+                ) : (
+                   <>
+                     <Download className="w-6 h-6" /> Simpan Sertifikat (PNG)
+                   </>
+                )}
             </button>
             <button 
                 onClick={onClose}
