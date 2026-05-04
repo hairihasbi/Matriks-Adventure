@@ -13,23 +13,40 @@ interface DuelModeProps {
 }
 
 const QUESTION_TIME = 45;
+const MAX_QUESTIONS = 15;
+const POINTS_CORRECT = 7;
+const POINTS_WRONG = -3;
+const POINTS_TIMEOUT = -5;
 
-// Memoized Question Component to prevent jitter on timer ticks
 const QuestionArea = memo(({ 
   player, 
   question, 
   feedback, 
+  finished,
   onAnswer 
 }: { 
   player: 1 | 2; 
   question: Question | null; 
   feedback: 'correct' | 'wrong' | null; 
+  finished: boolean;
   onAnswer: (p: 1 | 2, a: string) => void;
 }) => (
   <>
     <div className="flex-1 flex flex-col items-center justify-center p-8">
         <AnimatePresence mode="wait">
-          {question && (
+          {finished ? (
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+              </div>
+              <p className="text-xl font-black text-white/50 uppercase tracking-widest">Selesai!</p>
+              <p className="text-xs text-white/30 uppercase font-bold">Menunggu lawan...</p>
+            </motion.div>
+          ) : question && (
             <motion.div 
               key={question.id}
               initial={{ x: 20, opacity: 0 }}
@@ -85,52 +102,62 @@ const QuestionArea = memo(({
   </>
 ));
 
-const PlayerPane = memo(({ player, question, score, timer, winScore, feedback, onAnswer }: { 
+const PlayerPane = memo(({ player, question, score, progress, timer, feedback, finished, onAnswer }: { 
   player: 1 | 2; 
   question: Question | null; 
   score: number; 
+  progress: number;
   timer: number;
-  winScore: number;
   feedback: 'correct' | 'wrong' | null; 
+  finished: boolean;
   onAnswer: (p: 1 | 2, a: string) => void;
 }) => (
-  <div className={`flex-1 flex flex-col relative ${feedback === 'wrong' ? 'bg-red-500/20' : feedback === 'correct' ? 'bg-emerald-500/20' : 'bg-transparent'}`}>
+  <div className={`flex-1 flex flex-col relative transition-colors duration-500 ${finished ? 'bg-black/40' : feedback === 'wrong' ? 'bg-red-500/20' : feedback === 'correct' ? 'bg-emerald-500/20' : 'bg-transparent'}`}>
     <div className={`p-8 border-b border-white/10 bg-black/20 flex flex-col gap-4`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-xl ${player === 1 ? 'bg-indigo-500' : 'bg-purple-500'}`}>
               {player === 1 ? 'P1' : 'P2'}
            </div>
-           <div className="h-4 w-48 bg-white/5 rounded-full overflow-hidden border border-white/10">
-              <motion.div 
-                animate={{ width: `${(score / winScore) * 100}%` }}
-                className={`h-full ${player === 1 ? 'bg-indigo-400' : 'bg-purple-400'} shadow-[0_0_15px_rgba(255,255,255,0.4)]`}
-              />
+           <div className="flex flex-col gap-1">
+             <div className="h-2 w-48 bg-white/5 rounded-full overflow-hidden border border-white/10">
+                <motion.div 
+                  animate={{ width: `${(progress / MAX_QUESTIONS) * 100}%` }}
+                  className={`h-full ${player === 1 ? 'bg-indigo-400' : 'bg-purple-400'} shadow-[0_0_15px_rgba(255,255,255,0.4)]`}
+                />
+             </div>
+             <span className="text-[10px] text-white/30 font-black uppercase tracking-widest">{progress} / {MAX_QUESTIONS} SOAL</span>
            </div>
         </div>
-        <div className="text-4xl font-black text-white tabular-nums">{score} / {winScore}</div>
+        <div className="text-right">
+          <div className="text-4xl font-black text-white tabular-nums">{score}</div>
+          <div className="text-[10px] font-black text-white/30 uppercase">POIN</div>
+        </div>
       </div>
       
       {/* Timer Bar */}
-      <div className="flex items-center gap-3">
-         <Clock className="w-4 h-4 text-white/50" />
-         <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-           <motion.div 
-             animate={{ 
-               width: `${(timer / QUESTION_TIME) * 100}%`,
-               backgroundColor: timer < 10 ? '#f87171' : '#fbbf24'
-             }}
-             className="h-full rounded-full"
-           />
-         </div>
-         <span className={`text-[10px] font-black tabular-nums ${timer < 10 ? 'text-red-400' : 'text-white/50'}`}>{timer}S</span>
-      </div>
+      {!finished && (
+        <div className="flex items-center gap-3">
+           <Clock className="w-4 h-4 text-white/50" />
+           <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+             <motion.div 
+               animate={{ 
+                 width: `${(timer / QUESTION_TIME) * 100}%`,
+                 backgroundColor: timer < 10 ? '#f87171' : '#fbbf24'
+               }}
+               className="h-full rounded-full"
+             />
+           </div>
+           <span className={`text-[10px] font-black tabular-nums ${timer < 10 ? 'text-red-400' : 'text-white/50'}`}>{timer}S</span>
+        </div>
+      )}
     </div>
 
     <QuestionArea 
       player={player}
       question={question}
       feedback={feedback}
+      finished={finished}
       onAnswer={onAnswer}
     />
   </div>
@@ -198,6 +225,8 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [player1Score, setPlayer1Score] = useState(0);
   const [player2Score, setPlayer2Score] = useState(0);
+  const [player1Progress, setPlayer1Progress] = useState(0);
+  const [player2Progress, setPlayer2Progress] = useState(0);
   const [currentQuestion1, setCurrentQuestion1] = useState<Question | null>(null);
   const [currentQuestion2, setCurrentQuestion2] = useState<Question | null>(null);
   const [timer1, setTimer1] = useState(QUESTION_TIME);
@@ -208,7 +237,13 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
   const [feedback1, setFeedback1] = useState<'correct' | 'wrong' | null>(null);
   const [feedback2, setFeedback2] = useState<'correct' | 'wrong' | null>(null);
 
-  const WIN_SCORE = 15;
+  const checkWinner = (s1: number, s2: number) => {
+    if (s1 > s2) return 1;
+    if (s2 > s1) return 2;
+    // Tiebreaker: whoever finished first (implicitly p1 if both finished and p1 is checked first)
+    // For now, simple score check.
+    return s1 >= s2 ? 1 : 2;
+  };
 
   const getPreparedDeck = useCallback((diff: Difficulty) => {
     const allQuizzes = MATRIX_ADVENTURE_DATA.flatMap(stage => stage.quizzes)
@@ -240,55 +275,63 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
     if (gameState !== 'playing') return;
 
     if (player === 1) {
-      if (answer === currentQuestion1?.correctAnswer) {
-        setFeedback1('correct');
-        const newScore = player1Score + 1;
-        setPlayer1Score(newScore);
-        if (newScore >= WIN_SCORE) {
-          setWinner(1);
-          setGameState('result');
-          if (onFinish) onFinish(1);
-        } else {
-          setTimeout(() => {
+      if (player1Progress >= MAX_QUESTIONS) return;
+
+      const isCorrect = answer === currentQuestion1?.correctAnswer;
+      const isTimeout = answer === 'TIMEOUT';
+      
+      setFeedback1(isCorrect ? 'correct' : 'wrong');
+      const pointChange = isCorrect ? POINTS_CORRECT : (isTimeout ? POINTS_TIMEOUT : POINTS_WRONG);
+      const nextScore = player1Score + pointChange;
+      const nextProgress = player1Progress + 1;
+      
+      setPlayer1Score(nextScore);
+      setPlayer1Progress(nextProgress);
+
+      if (nextProgress >= MAX_QUESTIONS && player2Progress >= MAX_QUESTIONS) {
+        const finalWinner = checkWinner(nextScore, player2Score);
+        setWinner(finalWinner);
+        setGameState('result');
+        if (onFinish) onFinish(finalWinner);
+      } else {
+        setTimeout(() => {
+          if (nextProgress < MAX_QUESTIONS) {
             setCurrentQuestion1(getNextQuestion(1, deck1, selectedDifficulty));
             setTimer1(QUESTION_TIME);
-            setFeedback1(null);
-          }, 300);
-        }
-      } else {
-        setFeedback1('wrong');
-        setTimeout(() => {
-          setCurrentQuestion1(getNextQuestion(1, deck1, selectedDifficulty));
-          setTimer1(QUESTION_TIME);
+          }
           setFeedback1(null);
         }, 300);
       }
     } else {
-      if (answer === currentQuestion2?.correctAnswer) {
-        setFeedback2('correct');
-        const newScore = player2Score + 1;
-        setPlayer2Score(newScore);
-        if (newScore >= WIN_SCORE) {
-          setWinner(2);
-          setGameState('result');
-          if (onFinish) onFinish(2);
-        } else {
-          setTimeout(() => {
+      if (player2Progress >= MAX_QUESTIONS) return;
+
+      const isCorrect = answer === currentQuestion2?.correctAnswer;
+      const isTimeout = answer === 'TIMEOUT';
+
+      setFeedback2(isCorrect ? 'correct' : 'wrong');
+      const pointChange = isCorrect ? POINTS_CORRECT : (isTimeout ? POINTS_TIMEOUT : POINTS_WRONG);
+      const nextScore = player2Score + pointChange;
+      const nextProgress = player2Progress + 1;
+
+      setPlayer2Score(nextScore);
+      setPlayer2Progress(nextProgress);
+
+      if (nextProgress >= MAX_QUESTIONS && player1Progress >= MAX_QUESTIONS) {
+        const finalWinner = checkWinner(player1Score, nextScore);
+        setWinner(finalWinner);
+        setGameState('result');
+        if (onFinish) onFinish(finalWinner);
+      } else {
+        setTimeout(() => {
+          if (nextProgress < MAX_QUESTIONS) {
             setCurrentQuestion2(getNextQuestion(2, deck2, selectedDifficulty));
             setTimer2(QUESTION_TIME);
-            setFeedback2(null);
-          }, 300);
-        }
-      } else {
-        setFeedback2('wrong');
-        setTimeout(() => {
-          setCurrentQuestion2(getNextQuestion(2, deck2, selectedDifficulty));
-          setTimer2(QUESTION_TIME);
+          }
           setFeedback2(null);
         }, 300);
       }
     }
-  }, [gameState, player1Score, player2Score, currentQuestion1, currentQuestion2, deck1, deck2, selectedDifficulty, onFinish, getNextQuestion]);
+  }, [gameState, player1Score, player2Score, player1Progress, player2Progress, currentQuestion1, currentQuestion2, deck1, deck2, selectedDifficulty, onFinish, getNextQuestion]);
 
   // Timers Effect
   useEffect(() => {
@@ -296,6 +339,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
 
     const interval = setInterval(() => {
       setTimer1(t => {
+        if (player1Progress >= MAX_QUESTIONS) return 0;
         if (t <= 1) {
           handleAnswer(1, 'TIMEOUT');
           return QUESTION_TIME;
@@ -303,6 +347,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
         return t - 1;
       });
       setTimer2(t => {
+        if (player2Progress >= MAX_QUESTIONS) return 0;
         if (t <= 1) {
           handleAnswer(2, 'TIMEOUT');
           return QUESTION_TIME;
@@ -312,11 +357,13 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameState, currentQuestion1, currentQuestion2, handleAnswer]);
+  }, [gameState, player1Progress, player2Progress, currentQuestion1, currentQuestion2, handleAnswer]);
 
   const startDuel = () => {
     setPlayer1Score(0);
     setPlayer2Score(0);
+    setPlayer1Progress(0);
+    setPlayer2Progress(0);
     
     const d1 = getPreparedDeck(selectedDifficulty);
     const d2 = getPreparedDeck(selectedDifficulty);
@@ -363,7 +410,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
             </motion.div>
           </div>
           <h1 className="text-6xl font-black text-white italic mb-6 tracking-tight">DUEL MATRIKS!</h1>
-          <p className="text-indigo-200 text-xl mb-8 max-w-md mx-auto opacity-80 uppercase font-black tracking-widest">Siapa tercepat menjawab 15 soal benar?</p>
+          <p className="text-indigo-200 text-xl mb-8 max-w-md mx-auto opacity-80 uppercase font-black tracking-widest">Selesaikan 15 soal secepat mungkin. Skor tertinggi menang!</p>
           
           <div className="flex flex-col gap-6 items-center">
             <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 gap-2">
@@ -494,9 +541,10 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
         player={1} 
         question={currentQuestion1} 
         score={player1Score} 
+        progress={player1Progress}
         timer={timer1}
-        winScore={WIN_SCORE}
         feedback={feedback1} 
+        finished={player1Progress >= MAX_QUESTIONS}
         onAnswer={handleAnswer} 
       />
       
@@ -508,9 +556,10 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
         player={2} 
         question={currentQuestion2} 
         score={player2Score} 
+        progress={player2Progress}
         timer={timer2}
-        winScore={WIN_SCORE}
         feedback={feedback2} 
+        finished={player2Progress >= MAX_QUESTIONS}
         onAnswer={handleAnswer} 
       />
     </div>
