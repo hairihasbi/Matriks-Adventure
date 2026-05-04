@@ -203,10 +203,38 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
   const [timer1, setTimer1] = useState(QUESTION_TIME);
   const [timer2, setTimer2] = useState(QUESTION_TIME);
   const [winner, setWinner] = useState<1 | 2 | null>(null);
+  const [deck1, setDeck1] = useState<Question[]>([]);
+  const [deck2, setDeck2] = useState<Question[]>([]);
   const [feedback1, setFeedback1] = useState<'correct' | 'wrong' | null>(null);
   const [feedback2, setFeedback2] = useState<'correct' | 'wrong' | null>(null);
 
   const WIN_SCORE = 15;
+
+  const getPreparedDeck = useCallback((diff: Difficulty) => {
+    const allQuizzes = MATRIX_ADVENTURE_DATA.flatMap(stage => stage.quizzes)
+      .filter(q => q.type === QuestionType.MULTIPLE_CHOICE)
+      .filter(q => !q.difficulty || q.difficulty === diff);
+    
+    const source = allQuizzes.length > 0 
+      ? allQuizzes 
+      : MATRIX_ADVENTURE_DATA.flatMap(stage => stage.quizzes).filter(q => q.type === QuestionType.MULTIPLE_CHOICE);
+
+    return shuffle(source.map(q => ({
+      ...q,
+      options: q.options ? shuffle([...q.options]) : []
+    })));
+  }, []);
+
+  const getNextQuestion = useCallback((player: 1 | 2, currentDeck: Question[], diff: Difficulty) => {
+    let deck = [...currentDeck];
+    if (deck.length === 0) {
+      deck = getPreparedDeck(diff);
+    }
+    const q = deck.shift()!;
+    if (player === 1) setDeck1(deck);
+    else setDeck2(deck);
+    return q;
+  }, [getPreparedDeck]);
 
   // Timers Effect
   useEffect(() => {
@@ -230,29 +258,23 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameState, currentQuestion1, currentQuestion2]);
-
-  const getRandomQuestion = (diff: Difficulty) => {
-    const allQuizzes = MATRIX_ADVENTURE_DATA.flatMap(stage => stage.quizzes)
-      .filter(q => q.type === QuestionType.MULTIPLE_CHOICE)
-      .filter(q => !q.difficulty || q.difficulty === diff);
-    
-    const source = allQuizzes.length > 0 
-      ? allQuizzes 
-      : MATRIX_ADVENTURE_DATA.flatMap(stage => stage.quizzes).filter(q => q.type === QuestionType.MULTIPLE_CHOICE);
-
-    const q = source[Math.floor(Math.random() * source.length)];
-    return {
-      ...q,
-      options: q.options ? shuffle([...q.options]) : []
-    };
-  };
+  }, [gameState, currentQuestion1, currentQuestion2, handleAnswer]);
 
   const startDuel = () => {
     setPlayer1Score(0);
     setPlayer2Score(0);
-    setCurrentQuestion1(getRandomQuestion(selectedDifficulty));
-    setCurrentQuestion2(getRandomQuestion(selectedDifficulty));
+    
+    const d1 = getPreparedDeck(selectedDifficulty);
+    const d2 = getPreparedDeck(selectedDifficulty);
+    
+    const q1 = d1.shift()!;
+    const q2 = d2.shift()!;
+    
+    setCurrentQuestion1(q1);
+    setCurrentQuestion2(q2);
+    setDeck1(d1);
+    setDeck2(d2);
+    
     setTimer1(QUESTION_TIME);
     setTimer2(QUESTION_TIME);
     setGameState('playing');
@@ -273,7 +295,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
           if (onFinish) onFinish(1);
         } else {
           setTimeout(() => {
-            setCurrentQuestion1(getRandomQuestion(selectedDifficulty));
+            setCurrentQuestion1(getNextQuestion(1, deck1, selectedDifficulty));
             setTimer1(QUESTION_TIME);
             setFeedback1(null);
           }, 300);
@@ -281,7 +303,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
       } else {
         setFeedback1('wrong');
         setTimeout(() => {
-          setCurrentQuestion1(getRandomQuestion(selectedDifficulty));
+          setCurrentQuestion1(getNextQuestion(1, deck1, selectedDifficulty));
           setTimer1(QUESTION_TIME);
           setFeedback1(null);
         }, 300);
@@ -297,7 +319,7 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
           if (onFinish) onFinish(2);
         } else {
           setTimeout(() => {
-            setCurrentQuestion2(getRandomQuestion(selectedDifficulty));
+            setCurrentQuestion2(getNextQuestion(2, deck2, selectedDifficulty));
             setTimer2(QUESTION_TIME);
             setFeedback2(null);
           }, 300);
@@ -305,13 +327,13 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
       } else {
         setFeedback2('wrong');
         setTimeout(() => {
-          setCurrentQuestion2(getRandomQuestion(selectedDifficulty));
+          setCurrentQuestion2(getNextQuestion(2, deck2, selectedDifficulty));
           setTimer2(QUESTION_TIME);
           setFeedback2(null);
         }, 300);
       }
     }
-  }, [gameState, player1Score, player2Score, currentQuestion1, currentQuestion2, selectedDifficulty, onFinish]);
+  }, [gameState, player1Score, player2Score, currentQuestion1, currentQuestion2, deck1, deck2, selectedDifficulty, onFinish, getNextQuestion]);
 
   if (gameState === 'lobby') {
     return (
