@@ -236,51 +236,6 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
     return q;
   }, [getPreparedDeck]);
 
-  // Timers Effect
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-
-    const interval = setInterval(() => {
-      setTimer1(t => {
-        if (t <= 1) {
-          handleAnswer(1, 'TIMEOUT');
-          return QUESTION_TIME;
-        }
-        return t - 1;
-      });
-      setTimer2(t => {
-        if (t <= 1) {
-          handleAnswer(2, 'TIMEOUT');
-          return QUESTION_TIME;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [gameState, currentQuestion1, currentQuestion2, handleAnswer]);
-
-  const startDuel = () => {
-    setPlayer1Score(0);
-    setPlayer2Score(0);
-    
-    const d1 = getPreparedDeck(selectedDifficulty);
-    const d2 = getPreparedDeck(selectedDifficulty);
-    
-    const q1 = d1.shift()!;
-    const q2 = d2.shift()!;
-    
-    setCurrentQuestion1(q1);
-    setCurrentQuestion2(q2);
-    setDeck1(d1);
-    setDeck2(d2);
-    
-    setTimer1(QUESTION_TIME);
-    setTimer2(QUESTION_TIME);
-    setGameState('playing');
-    setWinner(null);
-  };
-
   const handleAnswer = useCallback((player: 1 | 2, answer: string) => {
     if (gameState !== 'playing') return;
 
@@ -334,6 +289,51 @@ const DuelMode: React.FC<DuelModeProps> = ({ onClose, onFinish, onClaimCertifica
       }
     }
   }, [gameState, player1Score, player2Score, currentQuestion1, currentQuestion2, deck1, deck2, selectedDifficulty, onFinish, getNextQuestion]);
+
+  // Timers Effect
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    const interval = setInterval(() => {
+      setTimer1(t => {
+        if (t <= 1) {
+          handleAnswer(1, 'TIMEOUT');
+          return QUESTION_TIME;
+        }
+        return t - 1;
+      });
+      setTimer2(t => {
+        if (t <= 1) {
+          handleAnswer(2, 'TIMEOUT');
+          return QUESTION_TIME;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameState, currentQuestion1, currentQuestion2, handleAnswer]);
+
+  const startDuel = () => {
+    setPlayer1Score(0);
+    setPlayer2Score(0);
+    
+    const d1 = getPreparedDeck(selectedDifficulty);
+    const d2 = getPreparedDeck(selectedDifficulty);
+    
+    const q1 = d1.shift()!;
+    const q2 = d2.shift()!;
+    
+    setCurrentQuestion1(q1);
+    setCurrentQuestion2(q2);
+    setDeck1(d1);
+    setDeck2(d2);
+    
+    setTimer1(QUESTION_TIME);
+    setTimer2(QUESTION_TIME);
+    setGameState('playing');
+    setWinner(null);
+  };
 
   if (gameState === 'lobby') {
     return (
